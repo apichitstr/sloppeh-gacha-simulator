@@ -403,7 +403,7 @@ h1 {
 }
 
 .log-line.rare {
-  color: #58c9c9;
+  color: var(--green);
 }
 
 .log-line.spacer {
@@ -434,7 +434,19 @@ h1 {
 }
 
 .inventory-group.rare h3 {
-  color: #58c9c9;
+  color: var(--green);
+}
+
+.inventory-item.legendary {
+  color: var(--orange);
+}
+
+.inventory-item.epic {
+  color: var(--purple);
+}
+
+.inventory-item.rare {
+  color: var(--green);
 }
 
 .inventory-item,

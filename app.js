@@ -320,7 +320,7 @@ function renderInventory() {
 
       const itemsMarkup = rarityItems.length
         ? rarityItems
-            .map(({ item, count }) => `<div class="inventory-item">- ${escapeHtml(item.name)}: ${formatNumber(count)}</div>`)
+            .map(({ item, count }) => `<div class="inventory-item ${rarity.toLowerCase()}">- ${escapeHtml(item.name)}: ${formatNumber(count)}</div>`)
             .join("")
         : '<div class="inventory-empty">- (none)</div>';
 
