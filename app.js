@@ -1,6 +1,11 @@
 const PRICE_PER_DRAW = 160;
 const LEGENDARY_PITY_ROLLS = 150;
 const EPIC_PITY_ROLLS = 10;
+const BLISS_POINT_THRESHOLD_DRAWS = 131;
+const BLISS_POINT_STEP = 20;
+const BLISS_POINT_MAX = 100;
+const BLISS_TRIGGER_REWARD = "Harmonic Core";
+const BLISS_GUARANTEE_REWARD = "Starwoven Dreams";
 const THB_PER_USD = 35;
 const STORAGE_KEY = "gacha-simulator-celestial-web-v1";
 
@@ -54,6 +59,9 @@ const dom = {
   legendaryPity: document.getElementById("legendary-pity"),
   totalCost: document.getElementById("total-cost"),
   topupTotal: document.getElementById("topup-total"),
+  blissPoint: document.getElementById("bliss-point"),
+  blissFill: document.getElementById("bliss-fill"),
+  blissNote: document.getElementById("bliss-note"),
   lastResult: document.getElementById("last-result"),
   drawOne: document.getElementById("draw-one"),
   drawTen: document.getElementById("draw-ten"),
@@ -83,6 +91,7 @@ function defaultState() {
     drawsSinceEpicOrBetter: 0,
     pearlBalance: 0,
     totalTopupBaht: 0,
+    blissPoints: 0,
     currencyCode: "THB",
     imRich: false,
     lastResultText: "-",
@@ -161,11 +170,17 @@ function weightedPick(forcedRarity = null) {
 function drawOnceWithPity() {
   const legendaryGuaranteed = state.drawsSinceLegendary >= LEGENDARY_PITY_ROLLS - 1;
   const epicGuaranteed = !legendaryGuaranteed && state.drawsSinceEpicOrBetter >= EPIC_PITY_ROLLS - 1;
+  const blissGuaranteed = state.blissPoints >= BLISS_POINT_MAX;
 
   let forcedRarity = null;
   let guaranteeMark = "";
+  let forcedRewardName = null;
 
-  if (legendaryGuaranteed) {
+  if (blissGuaranteed) {
+    forcedRarity = "Legendary";
+    forcedRewardName = BLISS_GUARANTEE_REWARD;
+    guaranteeMark = "BLISS GUARANTEED";
+  } else if (legendaryGuaranteed) {
     forcedRarity = "Legendary";
     guaranteeMark = "LEGENDARY GUARANTEED";
   } else if (epicGuaranteed) {
@@ -178,11 +193,18 @@ function drawOnceWithPity() {
     return null;
   }
 
-  state.inventory[item.name] += 1;
-  if (item.rarity === "Legendary") {
+  const resolvedItem = forcedRewardName
+    ? { ...item, name: forcedRewardName }
+    : item;
+
+  state.inventory[resolvedItem.name] += 1;
+  if (resolvedItem.rarity === "Legendary") {
     state.drawsSinceLegendary = 0;
     state.drawsSinceEpicOrBetter = 0;
-  } else if (item.rarity === "Epic") {
+    if (blissGuaranteed) {
+      state.blissPoints = 0;
+    }
+  } else if (resolvedItem.rarity === "Epic") {
     state.drawsSinceLegendary += 1;
     state.drawsSinceEpicOrBetter = 0;
   } else {
@@ -190,7 +212,20 @@ function drawOnceWithPity() {
     state.drawsSinceEpicOrBetter += 1;
   }
 
-  return { item, guaranteeMark };
+  return { item: resolvedItem, guaranteeMark };
+}
+
+function updateBlissPoints(totalDraws, item) {
+  if (totalDraws < BLISS_POINT_THRESHOLD_DRAWS || item.rarity !== "Legendary") {
+    return;
+  }
+
+  if (item.name === BLISS_TRIGGER_REWARD) {
+    state.blissPoints = Math.min(BLISS_POINT_MAX, state.blissPoints + BLISS_POINT_STEP);
+    return;
+  }
+
+  state.blissPoints = 0;
 }
 
 function autoTopupForRichMode(shortfall) {
@@ -256,6 +291,7 @@ function drawMany(count) {
     }
 
     state.drawCount += 1;
+    updateBlissPoints(state.drawCount, result.item);
     lastItem = result.item;
     const mark = result.guaranteeMark ? `  [${result.guaranteeMark}]` : "";
     pushLog(`#${String(state.drawCount).padStart(4, "0")}  [${result.item.rarity}]  ${result.item.name}${mark}`, rarityClass(result.item.rarity));
@@ -284,6 +320,11 @@ function renderStatus() {
   dom.legendaryPity.textContent = `Legendary pity: ${state.drawsSinceLegendary}/${LEGENDARY_PITY_ROLLS} (in ${LEGENDARY_PITY_ROLLS - state.drawsSinceLegendary} draw)`;
   dom.totalCost.textContent = `Total cost: ${formatNumber(state.drawCount)} draw(s) x ${PRICE_PER_DRAW} = ${formatNumber(state.drawCount * PRICE_PER_DRAW)} pearl`;
   dom.topupTotal.textContent = `Top up: ${formatMoney(state.totalTopupBaht)}`;
+  dom.blissPoint.textContent = `Bliss Point: ${formatNumber(state.blissPoints)}/100`;
+  dom.blissFill.style.width = `${Math.max(0, Math.min(100, state.blissPoints))}%`;
+  dom.blissNote.textContent = state.blissPoints >= BLISS_POINT_MAX
+    ? `Bliss Privilege activated. The next Legendary reward will be ${BLISS_GUARANTEE_REWARD}.`
+    : `After ${BLISS_POINT_THRESHOLD_DRAWS} total draws, Harmonic Core gives +${BLISS_POINT_STEP}%. At 100%, the next Legendary becomes ${BLISS_GUARANTEE_REWARD}.`;
   dom.lastResult.textContent = state.lastResultText;
   dom.lastResult.className = `last-result-value ${state.lastResultRarity ? `rarity-${state.lastResultRarity.toLowerCase()}` : ""}`;
 }
@@ -426,6 +467,7 @@ function loadState() {
     state.drawsSinceEpicOrBetter = Number(parsed.drawsSinceEpicOrBetter) || 0;
     state.pearlBalance = Number(parsed.pearlBalance) || 0;
     state.totalTopupBaht = Number(parsed.totalTopupBaht) || 0;
+    state.blissPoints = Math.max(0, Math.min(BLISS_POINT_MAX, Number(parsed.blissPoints) || 0));
     state.currencyCode = parsed.currencyCode === "USD" ? "USD" : "THB";
     state.imRich = Boolean(parsed.imRich);
     state.lastResultText = parsed.lastResultText || "-";

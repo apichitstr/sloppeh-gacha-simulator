@@ -19,7 +19,7 @@
     <div class="app-shell">
       <header class="hero panel">
         <div class="hero-copy">
-          <p class="eyebrow">Celestial edition</p>
+          <p class="eyebrow">Celestial Echo</p>
           <h1>Gacha Box Simulator [Celestial]</h1>
           <p class="subheading">Unlimited draw | Epic pity every 10 draws | Legendary pity every 150 draws</p>
         </div>
@@ -34,7 +34,7 @@
 
           <label class="rich-toggle">
             <input id="im-rich" type="checkbox" />
-            <span>I'm rich</span>
+            <span>Auto-Top up</span>
           </label>
         </div>
       </header>
@@ -60,6 +60,13 @@
           <div class="stat-tile stat-wide pity-stack">
             <div id="epic-pity" class="pity-line pity-epic">Epic pity: 0/10 (in 10 draw)</div>
             <div id="legendary-pity" class="pity-line pity-legendary">Legendary pity: 0/150 (in 150 draw)</div>
+            <div class="bliss-block">
+              <div id="bliss-point" class="bliss-line">Bliss Point: 0/100</div>
+              <div class="bliss-meter" aria-hidden="true">
+                <div id="bliss-fill" class="bliss-fill"></div>
+              </div>
+              <div id="bliss-note" class="bliss-note">After 131 total draws, Harmonic Core gives +20%. At 100%, the next Legendary becomes Starwoven Dreams.</div>
+            </div>
           </div>
         </div>
 
