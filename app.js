@@ -8,7 +8,7 @@ const BLISS_TRIGGER_REWARD = "Harmonic Core";
 const BLISS_GUARANTEE_REWARD = "Starwoven Dreams";
 const THB_PER_USD = 35;
 const STORAGE_KEY = "gacha-simulator-celestial-web-v1";
-const ANALYTICS_ENDPOINT = "https://script.google.com/macros/s/AKfycbyu41ffdc5Bvq5QOzYycKAMal4ekCUIK5SVR41oERQvUNL_lD6jGa0G52CqOYnqgVLh/exec";
+const ANALYTICS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzPKMXBtShuXZ23KBEiYSxJOb9HitbqHRV_KjvgBN4yodcXz5w0qSgMOTIhnsJBdFNU/exec";
 const ANALYTICS_SESSION_KEY = "gacha-simulator-session-id";
 const ANALYTICS_TIMEZONE = "Asia/Bangkok";
 
