@@ -329,7 +329,16 @@ h1 {
 }
 
 .topup-line {
-  color: #cbd5e1;
+  display: inline-block;
+  margin-top: 0.22rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 10px;
+  border: 1px solid rgba(141, 224, 95, 0.32);
+  background: rgba(141, 224, 95, 0.12);
+  color: #b8f47b;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-shadow: 0 0 10px rgba(141, 224, 95, 0.18);
 }
 
 .last-result-row {
