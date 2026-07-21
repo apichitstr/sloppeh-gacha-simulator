@@ -8,6 +8,8 @@ const BLISS_TRIGGER_REWARD = "Harmonic Core";
 const BLISS_GUARANTEE_REWARD = "Starwoven Dreams";
 const THB_PER_USD = 35;
 const STORAGE_KEY = "gacha-simulator-celestial-web-v1";
+const ANALYTICS_ENDPOINT = "https://script.google.com/macros/s/AKfycbw02Tvqoh_U4gUnzajLFMj00p4_Z_5SrrqKqyjdzpvrJDs_229hum7GQLQjEB6G14gV/exec";
+const ANALYTICS_SESSION_KEY = "gacha-simulator-session-id";
 
 const TOPUP_PACKAGES = [
   { baht: 35, pearl: 60 },
@@ -82,6 +84,10 @@ const dom = {
 
 const state = defaultState();
 
+const analytics = {
+  sessionId: getOrCreateSessionId(),
+};
+
 function defaultState() {
   return {
     logEntries: [],
@@ -117,6 +123,63 @@ function formatMoney(thbValue) {
     return `$${(thbValue / THB_PER_USD).toFixed(2)}`;
   }
   return `${formatNumber(thbValue)} THB`;
+}
+
+function randomToken(length = 10) {
+  return Math.random().toString(36).slice(2, 2 + length);
+}
+
+function getOrCreateSessionId() {
+  try {
+    const existing = localStorage.getItem(ANALYTICS_SESSION_KEY);
+    if (existing) {
+      return existing;
+    }
+    const created = `${Date.now().toString(36)}-${randomToken(8)}`;
+    localStorage.setItem(ANALYTICS_SESSION_KEY, created);
+    return created;
+  } catch {
+    return `${Date.now().toString(36)}-${randomToken(8)}`;
+  }
+}
+
+function sendAnalyticsEvent(eventName, details = {}) {
+  if (!ANALYTICS_ENDPOINT) {
+    return;
+  }
+
+  const payload = {
+    ts: new Date().toISOString(),
+    event: eventName,
+    sessionId: analytics.sessionId,
+    page: window.location.pathname,
+    drawCount: state.drawCount,
+    pearlBalance: state.pearlBalance,
+    totalTopupBaht: state.totalTopupBaht,
+    blissPoints: state.blissPoints,
+    currencyCode: state.currencyCode,
+    imRich: state.imRich,
+    userAgent: navigator.userAgent,
+    ...details,
+  };
+
+  const requestBody = JSON.stringify(payload);
+
+  try {
+    fetch(ANALYTICS_ENDPOINT, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      },
+      body: requestBody,
+      keepalive: true,
+    }).catch(() => {
+      // ignore network failures to avoid impacting gameplay
+    });
+  } catch {
+    // ignore network failures to avoid impacting gameplay
+  }
 }
 
 function formatPackageLabel(packageInfo) {
@@ -284,6 +347,9 @@ function drawMany(count) {
   pushLog(`--- Draw ${count} ---`, "header");
 
   let lastItem = null;
+  let legendaryCount = 0;
+  let epicCount = 0;
+  let rareCount = 0;
   for (let i = 0; i < count; i += 1) {
     const result = drawOnceWithPity();
     if (!result) {
@@ -293,6 +359,13 @@ function drawMany(count) {
     state.drawCount += 1;
     updateBlissPoints(state.drawCount, result.item);
     lastItem = result.item;
+    if (result.item.rarity === "Legendary") {
+      legendaryCount += 1;
+    } else if (result.item.rarity === "Epic") {
+      epicCount += 1;
+    } else {
+      rareCount += 1;
+    }
     const mark = result.guaranteeMark ? `  [${result.guaranteeMark}]` : "";
     pushLog(`#${String(state.drawCount).padStart(4, "0")}  [${result.item.rarity}]  ${result.item.name}${mark}`, rarityClass(result.item.rarity));
   }
@@ -304,6 +377,14 @@ function drawMany(count) {
 
   pushLog("", "spacer");
   renderAll();
+  sendAnalyticsEvent("draw", {
+    drawsRequested: count,
+    legendaryInBatch: legendaryCount,
+    epicInBatch: epicCount,
+    rareInBatch: rareCount,
+    lastResult: state.lastResultText,
+    blissPointsAfter: state.blissPoints,
+  });
 }
 
 function countByRarity(rarity) {
@@ -424,6 +505,11 @@ function confirmTopup() {
   pushLog("", "spacer");
   closeTopupModal();
   renderAll();
+  sendAnalyticsEvent("topup", {
+    packs: totalPacks,
+    topupBaht: totalBaht,
+    topupPearl: totalPearl,
+  });
 }
 
 function resetState() {
@@ -433,6 +519,7 @@ function resetState() {
   dom.richToggle.checked = keepRich;
   saveState();
   renderAll();
+  sendAnalyticsEvent("reset", { reason: "manual" });
 }
 
 function renderAll() {
@@ -480,6 +567,7 @@ function loadState() {
 function setCurrency(code) {
   state.currencyCode = code === "USD" ? "USD" : "THB";
   renderAll();
+  sendAnalyticsEvent("currency_change", { currencyCode: state.currencyCode });
 }
 
 function bindEvents() {
@@ -501,6 +589,7 @@ function bindEvents() {
   dom.richToggle.addEventListener("change", (event) => {
     state.imRich = event.target.checked;
     saveState();
+    sendAnalyticsEvent("rich_toggle", { enabled: state.imRich });
   });
 
   dom.topupModal.addEventListener("click", (event) => {
@@ -522,6 +611,7 @@ function init() {
   dom.richToggle.checked = state.imRich;
   bindEvents();
   renderAll();
+  sendAnalyticsEvent("session_start", { referrer: document.referrer || "" });
 }
 
 init();
