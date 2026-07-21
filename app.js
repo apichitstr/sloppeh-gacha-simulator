@@ -309,21 +309,86 @@ function updateBlissPoints(totalDraws, item) {
   state.blissPoints = 0;
 }
 
+function chooseFewestPackagePlan(shortfall) {
+  const packages = TOPUP_PACKAGES.map((pkg, index) => ({ ...pkg, index }));
+  const maxPearl = Math.max(...packages.map((pkg) => pkg.pearl));
+  const minPacks = Math.ceil(shortfall / maxPearl);
+
+  // For very large gaps, skip exhaustive search and keep the fewest-pack greedy plan.
+  if (minPacks > 8) {
+    const biggest = packages.reduce((best, current) => (current.pearl > best.pearl ? current : best));
+    const qtyByIndex = new Array(packages.length).fill(0);
+    if (shortfall % biggest.pearl === 0) {
+      qtyByIndex[biggest.index] = minPacks;
+    } else {
+      qtyByIndex[biggest.index] = Math.max(0, minPacks - 1);
+      const covered = qtyByIndex[biggest.index] * biggest.pearl;
+      const remain = Math.max(0, shortfall - covered);
+      const lastPack = [...packages]
+        .filter((pkg) => pkg.pearl >= remain)
+        .sort((a, b) => (a.pearl - b.pearl) || (a.baht - b.baht))[0] || biggest;
+      qtyByIndex[lastPack.index] += 1;
+    }
+
+    return TOPUP_PACKAGES
+      .map((pkg, index) => ({ ...pkg, qty: qtyByIndex[index] }))
+      .filter((pkg) => pkg.qty > 0);
+  }
+
+  let best = null;
+  const qtyByIndex = new Array(packages.length).fill(0);
+
+  function dfs(step, totalPearl, totalBaht) {
+    if (step === minPacks) {
+      if (totalPearl < shortfall) {
+        return;
+      }
+
+      const extra = totalPearl - shortfall;
+      const candidate = {
+        extra,
+        baht: totalBaht,
+        qtyByIndex: [...qtyByIndex],
+      };
+
+      if (!best || candidate.extra < best.extra || (candidate.extra === best.extra && candidate.baht < best.baht)) {
+        best = candidate;
+      }
+      return;
+    }
+
+    // Prune when current best cannot be improved on overage.
+    if (best && totalPearl - shortfall > best.extra) {
+      return;
+    }
+
+    for (let i = 0; i < packages.length; i += 1) {
+      const pkg = packages[i];
+      qtyByIndex[pkg.index] += 1;
+      dfs(step + 1, totalPearl + pkg.pearl, totalBaht + pkg.baht);
+      qtyByIndex[pkg.index] -= 1;
+    }
+  }
+
+  dfs(0, 0, 0);
+
+  if (!best) {
+    return [];
+  }
+
+  return TOPUP_PACKAGES
+    .map((pkg, index) => ({ ...pkg, qty: best.qtyByIndex[index] }))
+    .filter((pkg) => pkg.qty > 0);
+}
+
 function autoTopupForRichMode(shortfall) {
   if (shortfall <= 0) {
     return;
   }
 
-  const packagesDesc = [...TOPUP_PACKAGES].sort((a, b) => b.baht - a.baht);
-  const selectedPurchases = [];
-  const singlePackCandidates = packagesDesc.filter((pkg) => pkg.pearl >= shortfall);
-
-  if (singlePackCandidates.length > 0) {
-    selectedPurchases.push({ ...singlePackCandidates[0], qty: 1 });
-  } else {
-    const largestPackage = packagesDesc[0];
-    const qty = Math.ceil(shortfall / largestPackage.pearl);
-    selectedPurchases.push({ ...largestPackage, qty });
+  const selectedPurchases = chooseFewestPackagePlan(shortfall);
+  if (!selectedPurchases.length) {
+    return;
   }
 
   let totalBaht = 0;

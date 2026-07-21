@@ -24,18 +24,15 @@
           <p class="subheading">Unlimited draw | Epic pity every 10 draws | Legendary pity every 150 draws</p>
         </div>
 
-        <div class="top-right-stack">
-          <div class="pearl-badge" aria-live="polite">
-            <span class="badge-label">Pearl</span>
-            <strong id="pearl-balance">0</strong>
-          </div>
-
-          <button id="topup-button" class="button button-warning" type="button">Top Up</button>
-
-          <label class="rich-toggle">
-            <input id="im-rich" type="checkbox" />
-            <span>Auto-Top up</span>
+        <div class="top-right-stack header-tools">
+          <label class="currency-row header-currency">
+            <span>Currency</span>
+            <select id="currency-select" class="select-field">
+              <option value="THB">THB</option>
+              <option value="USD">USD</option>
+            </select>
           </label>
+          <button id="reset-button" class="button button-neutral" type="button">Reset</button>
         </div>
       </header>
 
@@ -100,15 +97,20 @@
           <div id="draw-fifty-price" class="draw-price">8,000 pearl</div>
         </div>
 
-        <div class="utility-card panel">
-          <label class="currency-row">
-            <span>Currency</span>
-            <select id="currency-select" class="select-field">
-              <option value="THB">THB</option>
-              <option value="USD">USD</option>
-            </select>
-          </label>
-          <button id="reset-button" class="button button-neutral" type="button">Reset</button>
+        <div class="utility-card account-card panel">
+          <div class="account-top-row">
+            <div class="pearl-badge" aria-live="polite">
+              <span class="badge-label">Pearl</span>
+              <strong id="pearl-balance">0</strong>
+            </div>
+
+            <button id="topup-button" class="button button-warning" type="button">Top Up</button>
+
+            <label class="rich-toggle">
+              <input id="im-rich" type="checkbox" />
+              <span>Auto-Top up</span>
+            </label>
+          </div>
         </div>
       </section>
 
