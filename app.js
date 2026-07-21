@@ -65,7 +65,6 @@ const dom = {
   blissPoint: document.getElementById("bliss-point"),
   blissFill: document.getElementById("bliss-fill"),
   blissNote: document.getElementById("bliss-note"),
-  lastResult: document.getElementById("last-result"),
   drawOne: document.getElementById("draw-one"),
   drawTen: document.getElementById("draw-ten"),
   drawFifty: document.getElementById("draw-fifty"),
@@ -498,14 +497,12 @@ function renderStatus() {
   dom.epicPity.textContent = `Epic pity: ${state.drawsSinceEpicOrBetter}/${EPIC_PITY_ROLLS} (in ${EPIC_PITY_ROLLS - state.drawsSinceEpicOrBetter} draw)`;
   dom.legendaryPity.textContent = `Legendary pity: ${state.drawsSinceLegendary}/${LEGENDARY_PITY_ROLLS} (in ${LEGENDARY_PITY_ROLLS - state.drawsSinceLegendary} draw)`;
   dom.totalCost.textContent = `Total cost: ${formatNumber(state.drawCount)} draw(s) x ${PRICE_PER_DRAW} = ${formatNumber(state.drawCount * PRICE_PER_DRAW)} pearl`;
-  dom.topupTotal.textContent = `Top up: ${formatMoney(state.totalTopupBaht)}`;
+  dom.topupTotal.textContent = `Real money spent: ${formatMoney(state.totalTopupBaht)}`;
   dom.blissPoint.textContent = `Bliss Point: ${formatNumber(state.blissPoints)}/100`;
   dom.blissFill.style.width = `${Math.max(0, Math.min(100, state.blissPoints))}%`;
   dom.blissNote.textContent = state.blissPoints >= BLISS_POINT_MAX
     ? `Bliss Privilege activated. The next Legendary reward will be ${BLISS_GUARANTEE_REWARD}.`
     : `After ${BLISS_POINT_THRESHOLD_DRAWS} total draws, Harmonic Core gives +${BLISS_POINT_STEP}%. At 100%, the next Legendary becomes ${BLISS_GUARANTEE_REWARD}.`;
-  dom.lastResult.textContent = state.lastResultText;
-  dom.lastResult.className = `last-result-value ${state.lastResultRarity ? `rarity-${state.lastResultRarity.toLowerCase()}` : ""}`;
 }
 
 function renderDrawPriceLabels() {
