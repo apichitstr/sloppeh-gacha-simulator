@@ -474,8 +474,23 @@ function countByRarity(rarity) {
   return INITIAL_REWARDS.reduce((sum, item) => sum + (item.rarity === rarity ? state.inventory[item.name] : 0), 0);
 }
 
+function updatePearlBalanceSizing(textValue) {
+  const length = String(textValue).length;
+  dom.pearlBalance.classList.remove("pearl-size-md", "pearl-size-sm", "pearl-size-xs");
+
+  if (length >= 15) {
+    dom.pearlBalance.classList.add("pearl-size-xs");
+  } else if (length >= 12) {
+    dom.pearlBalance.classList.add("pearl-size-sm");
+  } else if (length >= 9) {
+    dom.pearlBalance.classList.add("pearl-size-md");
+  }
+}
+
 function renderStatus() {
-  dom.pearlBalance.textContent = formatNumber(state.pearlBalance);
+  const pearlText = formatNumber(state.pearlBalance);
+  dom.pearlBalance.textContent = pearlText;
+  updatePearlBalanceSizing(pearlText);
   dom.totalDraws.textContent = formatNumber(state.drawCount);
   dom.legendaryCount.textContent = formatNumber(countByRarity("Legendary"));
   dom.epicCount.textContent = formatNumber(countByRarity("Epic"));
