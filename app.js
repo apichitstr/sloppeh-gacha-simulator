@@ -11,6 +11,8 @@ const STORAGE_KEY = "gacha-simulator-celestial-web-v1";
 const ANALYTICS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzPKMXBtShuXZ23KBEiYSxJOb9HitbqHRV_KjvgBN4yodcXz5w0qSgMOTIhnsJBdFNU/exec";
 const ANALYTICS_SESSION_KEY = "gacha-simulator-session-id";
 const ANALYTICS_TIMEZONE = "Asia/Bangkok";
+const PEARL_UNIT_LABEL = "pearl";
+const REAL_MONEY_SPENT_LABEL = "Real money spent";
 
 const TOPUP_PACKAGES = [
   { baht: 35, pearl: 60 },
@@ -100,8 +102,6 @@ function defaultState() {
     blissPoints: 0,
     currencyCode: "THB",
     imRich: false,
-    lastResultText: "-",
-    lastResultRarity: "",
   };
 }
 
@@ -123,6 +123,10 @@ function formatMoney(thbValue) {
     return `$${(thbValue / THB_PER_USD).toFixed(2)}`;
   }
   return `${formatNumber(thbValue)} THB`;
+}
+
+function formatPearlAmount(value) {
+  return `${formatNumber(value)} ${PEARL_UNIT_LABEL}`;
 }
 
 function randomToken(length = 10) {
@@ -204,7 +208,7 @@ function formatPackageLabel(packageInfo) {
   const secondary = state.currencyCode === "USD"
     ? `${formatNumber(packageInfo.baht)} THB`
     : `$${(packageInfo.baht / THB_PER_USD).toFixed(2)}`;
-  return `${primary} (${secondary}) -> ${formatNumber(packageInfo.pearl)} pearl`;
+  return `${primary} (${secondary}) -> ${formatPearlAmount(packageInfo.pearl)}`;
 }
 
 function rarityClass(rarity) {
@@ -402,7 +406,7 @@ function autoTopupForRichMode(shortfall) {
 
   state.totalTopupBaht += totalBaht;
   state.pearlBalance += totalPearl;
-  pushLog(`--- I'M RICH AUTO TOP UP x${totalPacks}: ${formatMoney(totalBaht)} -> +${formatNumber(totalPearl)} pearl ---`, "header");
+  pushLog(`--- I'M RICH AUTO TOP UP x${totalPacks}: ${formatMoney(totalBaht)} -> +${formatPearlAmount(totalPearl)} ---`, "header");
   pushLog("", "spacer");
 }
 
@@ -413,7 +417,7 @@ function spendForDraws(count) {
   }
 
   if (state.pearlBalance < needed) {
-    window.alert(`Need ${formatNumber(needed)} pearl for ${count} draw(s). Current balance: ${formatNumber(state.pearlBalance)} pearl.`);
+    window.alert(`Need ${formatPearlAmount(needed)} for ${count} draw(s). Current balance: ${formatPearlAmount(state.pearlBalance)}.`);
     return false;
   }
 
@@ -429,6 +433,7 @@ function drawMany(count) {
   pushLog(`--- Draw ${count} ---`, "header");
 
   let lastItem = null;
+  let lastResultText = "-";
   let legendaryCount = 0;
   let epicCount = 0;
   let rareCount = 0;
@@ -453,8 +458,7 @@ function drawMany(count) {
   }
 
   if (lastItem) {
-    state.lastResultText = `[${lastItem.rarity}] ${lastItem.name}`;
-    state.lastResultRarity = lastItem.rarity;
+    lastResultText = `[${lastItem.rarity}] ${lastItem.name}`;
   }
 
   pushLog("", "spacer");
@@ -464,7 +468,7 @@ function drawMany(count) {
     legendaryInBatch: legendaryCount,
     epicInBatch: epicCount,
     rareInBatch: rareCount,
-    lastResult: state.lastResultText,
+    lastResult: lastResultText,
     blissPointsAfter: state.blissPoints,
   });
 }
@@ -496,8 +500,8 @@ function renderStatus() {
   dom.rareCount.textContent = formatNumber(countByRarity("Rare"));
   dom.epicPity.textContent = `Epic pity: ${state.drawsSinceEpicOrBetter}/${EPIC_PITY_ROLLS} (in ${EPIC_PITY_ROLLS - state.drawsSinceEpicOrBetter} draw)`;
   dom.legendaryPity.textContent = `Legendary pity: ${state.drawsSinceLegendary}/${LEGENDARY_PITY_ROLLS} (in ${LEGENDARY_PITY_ROLLS - state.drawsSinceLegendary} draw)`;
-  dom.totalCost.textContent = `Total cost: ${formatNumber(state.drawCount)} draw(s) x ${PRICE_PER_DRAW} = ${formatNumber(state.drawCount * PRICE_PER_DRAW)} pearl`;
-  dom.topupTotal.textContent = `Real money spent: ${formatMoney(state.totalTopupBaht)}`;
+  dom.totalCost.textContent = `Total cost: ${formatNumber(state.drawCount)} draw(s) x ${PRICE_PER_DRAW} = ${formatPearlAmount(state.drawCount * PRICE_PER_DRAW)}`;
+  dom.topupTotal.textContent = `${REAL_MONEY_SPENT_LABEL}: ${formatMoney(state.totalTopupBaht)}`;
   dom.blissPoint.textContent = `Bliss Point: ${formatNumber(state.blissPoints)}/100`;
   dom.blissFill.style.width = `${Math.max(0, Math.min(100, state.blissPoints))}%`;
   dom.blissNote.textContent = state.blissPoints >= BLISS_POINT_MAX
@@ -506,9 +510,9 @@ function renderStatus() {
 }
 
 function renderDrawPriceLabels() {
-  dom.drawOnePrice.textContent = `${formatNumber(PRICE_PER_DRAW)} pearl`;
-  dom.drawTenPrice.textContent = `${formatNumber(PRICE_PER_DRAW * 10)} pearl`;
-  dom.drawFiftyPrice.textContent = `${formatNumber(PRICE_PER_DRAW * 50)} pearl`;
+  dom.drawOnePrice.textContent = formatPearlAmount(PRICE_PER_DRAW);
+  dom.drawTenPrice.textContent = formatPearlAmount(PRICE_PER_DRAW * 10);
+  dom.drawFiftyPrice.textContent = formatPearlAmount(PRICE_PER_DRAW * 50);
 }
 
 function renderHistory() {
@@ -634,7 +638,7 @@ function confirmTopup() {
 
   state.totalTopupBaht += totalBaht;
   state.pearlBalance += totalPearl;
-  pushLog(`--- TOP UP x${totalPacks}: ${formatMoney(totalBaht)} -> +${formatNumber(totalPearl)} pearl ---`, "header");
+  pushLog(`--- TOP UP x${totalPacks}: ${formatMoney(totalBaht)} -> +${formatPearlAmount(totalPearl)} ---`, "header");
   pushLog("", "spacer");
   closeTopupModal();
   renderAll();
@@ -679,7 +683,7 @@ function loadState() {
     }
 
     const parsed = JSON.parse(raw);
-    Object.assign(state, defaultState(), parsed);
+    Object.assign(state, defaultState());
     state.inventory = { ...defaultState().inventory, ...(parsed.inventory || {}) };
     state.logEntries = Array.isArray(parsed.logEntries) ? parsed.logEntries : [];
     state.drawCount = Number(parsed.drawCount) || 0;
@@ -690,8 +694,6 @@ function loadState() {
     state.blissPoints = Math.max(0, Math.min(BLISS_POINT_MAX, Number(parsed.blissPoints) || 0));
     state.currencyCode = parsed.currencyCode === "USD" ? "USD" : "THB";
     state.imRich = Boolean(parsed.imRich);
-    state.lastResultText = parsed.lastResultText || "-";
-    state.lastResultRarity = parsed.lastResultRarity || "";
   } catch {
     // ignore malformed storage content
   }
